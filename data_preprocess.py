@@ -9,8 +9,10 @@ def unpickle(file):
 
 
 def restore_images_cifar10_train():
+    if not os.path.exists(os.path.join(root_dir, 'train')):
+        os.mkdir(os.path.join(root_dir, 'train'))
     for i in range(1, 6):
-        batch= unpickle('data/cifar10/data_batch_'+str(i))
+        batch= unpickle(root_dir+'data_batch_'+str(i))
         print(batch)
         image_arrays = batch[b'data']
         labels = batch[b'labels']
@@ -27,13 +29,15 @@ def restore_images_cifar10_train():
 
             label_name = label_names[labels[index]].decode()
             filename = filenames[index].decode()
-            if not os.path.exists(os.path.join('data/cifar10/train/', label_name)):
-                os.mkdir(os.path.join('data/cifar10/train/', label_name))
-            cv2.imwrite(os.path.join('data/cifar10/train/', label_name, filename), merged)
+            if not os.path.exists(os.path.join(root_dir+'train/', label_name)):
+                os.mkdir(os.path.join(root_dir+'train/', label_name))
+            cv2.imwrite(os.path.join(root_dir+'train/', label_name, filename), merged)
 
 
 def restore_image_cifar10_val():
-    batch = unpickle('data/cifar10/test_batch')
+    if not os.path.exists(os.path.join(root_dir, 'val')):
+        os.mkdir(os.path.join(root_dir, 'val'))
+    batch = unpickle(root_dir+'test_batch')
     image_arrays = batch[b'data']
     labels = batch[b'labels']
     filenames = batch[b'filenames']
@@ -49,17 +53,18 @@ def restore_image_cifar10_val():
 
         label_name = label_names[labels[index]].decode()
         filename = filenames[index].decode()
-        if not os.path.exists(os.path.join('data/cifar10/val/', label_name)):
-            os.mkdir(os.path.join('data/cifar10/val/', label_name))
-        cv2.imwrite(os.path.join('data/cifar10/val/', label_name, filename), merged)
+        if not os.path.exists(os.path.join(root_dir+'val/', label_name)):
+            os.mkdir(os.path.join(root_dir+'val/', label_name))
+        cv2.imwrite(os.path.join(root_dir+'val/', label_name, filename), merged)
 
 
 def check_label_names():
-    d = unpickle('data/cifar10/batches.meta')
+    d = unpickle(root_dir+'batches.meta')
     label_names = d[b'label_names']
     return label_names
 
 
+root_dir = 'dataset/cifar10/'
 label_names = check_label_names()
 
 
