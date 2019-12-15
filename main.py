@@ -136,9 +136,11 @@ def main_worker(gpu, ngpus_per_node, args):
     if args.pretrained:
         print("=> using pre-trained model '{}'".format(args.arch))
         model = models.__dict__[args.arch](pretrained=True)
+        print('=| Finish loading pre-trained model "{}""'.format(args.arch))
     else:
         print("=> creating model '{}'".format(args.arch))
         model = models.__dict__[args.arch]()
+        print("=| Finish creating model '{}'".format(args.arch))
 
     if args.distributed:
         # For multiprocessing distributed, DistributedDataParallel constructor
@@ -154,7 +156,7 @@ def main_worker(gpu, ngpus_per_node, args):
             args.workers = int((args.workers + ngpus_per_node - 1) / ngpus_per_node)
             model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
         else:
-            model.cuda()
+            # model.cuda()
             # DistributedDataParallel will divide and allocate batch_size to all
             # available GPUs if device_ids are not set
             model = torch.nn.parallel.DistributedDataParallel(model)
@@ -182,6 +184,7 @@ def main_worker(gpu, ngpus_per_node, args):
             print("=> loading checkpoint '{}'".format(args.resume))
             if args.gpu is None:
                 checkpoint = torch.load(args.resume)
+                print('Finish loading checkpoint')
             else:
                 # Map model to be loaded to specified single gpu.
                 loc = 'cuda:{}'.format(args.gpu)
