@@ -19,24 +19,24 @@ import torchvision.datasets as datasets
 import torchvision.models as models
 
 model_names = sorted(name for name in models.__dict__
-    if name.islower() and not name.startswith("__")
-    and callable(models.__dict__[name]))
+                     if name.islower() and not name.startswith("__")
+                     and callable(models.__dict__[name]))
 
-parser = argparse.ArgumentParser(description='PyTorch Cifar-10 Training')
+parser = argparse.ArgumentParser(description='PyTorch Cifar-10 distributed Training')
 parser.add_argument('data', metavar='DIR',
                     help='path to dataset')
 parser.add_argument('-a', '--arch', metavar='ARCH', default='vgg19',
                     choices=model_names,
                     help='model architecture: ' +
-                        ' | '.join(model_names) +
-                        ' (default: vgg19)')
-parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
-                    help='number of data loading workers (default: 4)')
-parser.add_argument('--epochs', default=90, type=int, metavar='N',
+                         ' | '.join(model_names) +
+                         ' (default: vgg19)')
+parser.add_argument('-j', '--workers', default=1, type=int, metavar='N',
+                    help='number of data loading workers (default: 1)')
+parser.add_argument('--epochs', default=10, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restarts)')
-parser.add_argument('-b', '--batch-size', default=64, type=int,
+parser.add_argument('-b', '--batch-size', default=32, type=int,
                     metavar='N',
                     help='mini-batch size (default: 256), this is the total '
                          'batch size of all GPUs on the current node when '
@@ -135,11 +135,26 @@ def main_worker(gpu, ngpus_per_node, args):
     # create model
     if args.pretrained:
         print("=> using pre-trained model '{}'".format(args.arch))
-        model = models.__dict__[args.arch](pretrained=True)
-        print('=| Finish loading pre-trained model "{}""'.format(args.arch))
+        model = models.__dict__[args.arch](num_classes=10)
+        model_dict = model.state_dict()
+        pretrained_dict = {k: v
+                           for k, v in models.vgg19(pretrained=True).state_dict().items()
+                           if k.find('classifier') == -1
+                           }
+        model_dict.update(pretrained_dict)
+        model.load_state_dict(model_dict)
+        print(model)
+        ct = 0
+        for child in model.children():
+            ct += 1
+            if ct <= 2:
+                for param in child.parameters():
+                    param.requires_grad = False
+
+        print('=| Finish loading pre-trained model "{}"'.format(args.arch))
     else:
         print("=> creating model '{}'".format(args.arch))
-        model = models.__dict__[args.arch]()
+        model = models.__dict__[args.arch](num_classes=10)
         print("=| Finish creating model '{}'".format(args.arch))
 
     if args.distributed:
@@ -167,16 +182,17 @@ def main_worker(gpu, ngpus_per_node, args):
         # DataParallel will divide and allocate batch_size to all available GPUs
         if args.arch.startswith('alexnet') or args.arch.startswith('vgg'):
             model.features = torch.nn.DataParallel(model.features)
-           # model.cuda()
+        # model.cuda()
         else:
             model = torch.nn.DataParallel(model).cuda()
 
     # define loss function (criterion) and optimizer
-    criterion = nn.CrossEntropyLoss() #.cuda(args.gpu)
+    criterion = nn.CrossEntropyLoss()  # .cuda(args.gpu)
 
-    optimizer = torch.optim.SGD(model.parameters(), args.lr,
-                                momentum=args.momentum,
-                                weight_decay=args.weight_decay)
+    optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()),
+                                 lr=args.lr,
+                                 betas=(0.9, 0.99),
+                                 weight_decay=args.weight_decay)
 
     # optionally resume from a checkpoint
     if args.resume:
@@ -204,6 +220,7 @@ def main_worker(gpu, ngpus_per_node, args):
     cudnn.benchmark = True
 
     # Data loading code
+    print("=> Loading data ...")
     traindir = os.path.join(args.data, 'train')
     valdir = os.path.join(args.data, 'val')
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -236,6 +253,7 @@ def main_worker(gpu, ngpus_per_node, args):
         ])),
         batch_size=args.batch_size, shuffle=False,
         num_workers=args.workers, pin_memory=True)
+    print("=| Loading data completed")
 
     if args.evaluate:
         validate(val_loader, model, criterion, args)
@@ -257,13 +275,13 @@ def main_worker(gpu, ngpus_per_node, args):
         best_acc1 = max(acc1, best_acc1)
 
         if not args.multiprocessing_distributed or (args.multiprocessing_distributed
-                and args.rank % ngpus_per_node == 0):
+                                                    and args.rank % ngpus_per_node == 0):
             save_checkpoint({
                 'epoch': epoch + 1,
                 'arch': args.arch,
                 'state_dict': model.state_dict(),
                 'best_acc1': best_acc1,
-                'optimizer' : optimizer.state_dict(),
+                'optimizer': optimizer.state_dict(),
             }, is_best)
 
 
@@ -365,6 +383,7 @@ def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
+
     def __init__(self, name, fmt=':f'):
         self.name = name
         self.fmt = fmt
