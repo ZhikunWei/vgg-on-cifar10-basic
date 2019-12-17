@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 import torchvision.models as models
 
@@ -22,5 +23,4 @@ class OurVGG(nn.Module):
 
 if __name__ == '__main__':
     vgg = models.vgg19(num_classes=10)
-    dict = vgg.state_dict()
-    print(dict)
+    model = torch.nn.parallel.DistributedDataParallel(vgg)
