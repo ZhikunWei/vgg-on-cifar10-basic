@@ -1,3 +1,5 @@
+# a baseline method
+
 import argparse
 import os
 import random
@@ -72,6 +74,7 @@ parser.add_argument('--multiprocessing-distributed', action='store_true',
                          'N processes per node, which has N GPUs. This is the '
                          'fastest way to use PyTorch for either single node or '
                          'multi node data parallel training')
+parser.add_argument('--log-number', default=0, type=int, help='the number for logging')
 
 best_acc1 = 0
 
@@ -95,9 +98,10 @@ def main_worker(args):
     global best_acc1
 
     if args.distributed:
+        print('Node ' + str(args.rank) + ' waiting other nodes to initialize...')
         dist.init_process_group(backend=args.dist_backend, init_method=args.dist_url,
                                 world_size=args.world_size, rank=args.rank)
-
+        print('Group initialization finish')
     # create model
     if args.pretrained:
         print("=> using pre-trained model '{}'".format(args.arch))
@@ -151,10 +155,10 @@ def main_worker(args):
         else:
             print("=> no checkpoint found at '{}'".format(args.resume))
 
-    cudnn.benchmark = True
+    # cudnn.benchmark = True
 
     # Data loading code
-    print("=> Loading data ...")
+    print("=> creating data loader ...")
     traindir = os.path.join(args.data, 'train')
     valdir = os.path.join(args.data, 'val')
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -186,7 +190,7 @@ def main_worker(args):
         ])),
         batch_size=args.batch_size, shuffle=False,
         num_workers=args.workers, pin_memory=True)
-    print("=| Loading data completed")
+    print("=| data loader created")
 
     if args.evaluate:
         validate(val_loader, model, criterion, args)
@@ -201,7 +205,8 @@ def main_worker(args):
         train(train_loader, model, criterion, optimizer, epoch, args)
 
         # evaluate on validation set
-        acc1 = validate(val_loader, model, criterion, args)
+        acc1, val_batch_time, val_losses = validate(val_loader, model, criterion, args)
+        write_log('log/test_log_'+args.log_number, epoch, val_losses, acc1, val_batch_time)
 
         # remember best acc@1 and save checkpoint
         is_best = acc1 > best_acc1
@@ -226,7 +231,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
     top5 = AverageMeter('Acc@5', ':6.2f')
     progress = ProgressMeter(
         len(train_loader),
-        [batch_time, data_time, losses, top1, top5],
+        [batch_time, data_time, losses, top1],
         prefix="Epoch: [{}]".format(epoch))
 
     # switch to train mode
@@ -247,14 +252,20 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         top1.update(acc1[0], images.size(0))
         top5.update(acc5[0], images.size(0))
 
+        print('Node[' + str(args.rank)+'] finish batch[' + str(i) + '] forwarding and is waiting')
+
         # compute gradient and do SGD step
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
         # measure elapsed time
-        batch_time.update(time.time() - end)
+        elasped_time = time.time() - end
+        batch_time.update(elasped_time)
         end = time.time()
+
+        write_log('log/train_log_' + str(args.log_number),
+                  epoch * len(train_loader) + i, loss.item(), acc1[0].item(), elasped_time)
 
         if i % args.print_freq == 0:
             progress.display(i)
@@ -267,7 +278,7 @@ def validate(val_loader, model, criterion, args):
     top5 = AverageMeter('Acc@5', ':6.2f')
     progress = ProgressMeter(
         len(val_loader),
-        [batch_time, losses, top1, top5],
+        [batch_time, losses, top1],
         prefix='Test: ')
 
     # switch to evaluate mode
@@ -297,7 +308,7 @@ def validate(val_loader, model, criterion, args):
         print(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
               .format(top1=top1, top5=top5))
 
-    return top1.avg
+    return top1.avg, batch_time.avg, losses.avg
 
 
 def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):
@@ -370,6 +381,12 @@ def accuracy(output, target, topk=(1,)):
             correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
+
+
+def write_log(filename, step, loss, acc, eplased_time):
+    content = str(step) + ' ' + str(loss) + ' ' + str(acc) + ' ' + str(eplased_time) + ' \n'
+    with open(filename, 'a') as f:
+        f.write(content)
 
 
 if __name__ == '__main__':

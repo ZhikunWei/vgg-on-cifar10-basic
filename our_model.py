@@ -23,4 +23,5 @@ class OurVGG(nn.Module):
 
 if __name__ == '__main__':
     vgg = models.vgg19(num_classes=10)
-    model = torch.nn.parallel.DistributedDataParallel(vgg)
+    # model = torch.nn.parallel.DistributedDataParallel(vgg)
+    print(vgg)
