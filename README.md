@@ -1,5 +1,8 @@
 # vgg-on-cifar10-basic
 
-# 12.19 main_v2.py:
+## before
+Find torch.distributed module and learn about it
 
-finish baseline model on 3 nodes: parameter server, synchronous every batch
+## 12.19
+main_v2.py: 
+Finish baseline model on 3 nodes: parameter server pattern, synchronous every batch
