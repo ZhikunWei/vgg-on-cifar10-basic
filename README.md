@@ -20,7 +20,7 @@ b128 = 8G
 b200 = 19-5=14
 b256 = 22-5 = 17
 
-baseline result: 
+baseline result: one epoch [131 batch]
 ####server1:
 bytes: rx 343.41 GiB  | tx 338.58 GiB <br>
 Acc@1 85.060 Acc@5 99.550
@@ -44,11 +44,20 @@ batch5  RX bytes:3647953571364  TX bytes:3669990808732  62.5,57,67
 batch20 RX bytes:3658015499936 (3.6 TB)  TX bytes:3680114323840 (3.6 TB)
 batch35 RX bytes:3668349515616 (3.6 TB)  TX bytes:3690503657237 (3.6 TB)
 
+froze 2 layers   Acc@1 81.404 Acc@5 99.550
+batch0  RX bytes:4053699553625 (4.0 TB)  TX bytes:4080387523933 (4.0 TB)
+batch13 RX bytes:4054926379290 (4.0 TB)  TX bytes:4081621849801 (4.0 TB)
+batch20 RX bytes:4055586951171 (4.0 TB)  TX bytes:4082286471732 (4.0 TB)
+batch123 RX bytes:4065306719780 (4.0 TB)  TX bytes:4092062381075 (4.0 TB)
+
+froze 1 layer  
+0  RX bytes:4065972342337 (4.0 TB)  TX bytes:4093897886483 (4.0 TB)
+10 RX bytes:4065974735095 (4.0 TB)  TX bytes:4093900231441 (4.0 TB)
 
 no fraze layers
 batch0  RX bytes:3671436998297 (3.6 TB)  TX bytes:3694775601177 (3.6 TB)
 batch5  RX bytes:3676135574915 (3.6 TB)  TX bytes:3699502061397 (3.6 TB)
-
+batch131*2+93 RX bytes:4052730933873 (4.0 TB)  TX bytes:4078247662911 (4.0 TB)
 
   
 

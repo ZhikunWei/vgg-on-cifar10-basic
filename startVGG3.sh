@@ -1,2 +1,2 @@
 #!/bin/bash
-sudo /home/a2019211150/anaconda3/bin/python main_v3.py --batch-size 64 --log-number v3_n2_0 --dist-url 'tcp://nasp-cpu-01-v4:20452' --pretrained  --multiprocessing-distributed --world-size 3 --rank 2 dataset/cifar10
+sudo /home/a2019211150/anaconda3/bin/python main_v3.py --batch-size 64 --log-number formal_test_n2 --train-layer 1 --dist-url 'tcp://nasp-cpu-01-v4:20452' --pretrained  --multiprocessing-distributed --world-size 3 --rank 2 dataset/cifar10
