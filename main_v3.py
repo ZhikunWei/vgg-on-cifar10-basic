@@ -24,7 +24,7 @@ model_names = sorted(name for name in models.__dict__
                      and callable(models.__dict__[name]))
 
 parser = argparse.ArgumentParser(description='PyTorch Cifar-10 distributed Training')
-parser.add_argument('data', metavar='DIR',
+parser.add_argument('data', default='dataset/cifar10', metavar='DIR',
                     help='path to dataset')
 parser.add_argument('-a', '--arch', metavar='ARCH', default='vgg19',
                     choices=model_names,
@@ -76,6 +76,11 @@ parser.add_argument('--multiprocessing-distributed', action='store_true',
                          'multi node data parallel training')
 parser.add_argument('--log-number', default='v999', help='the id for logging')
 
+parser.add_argument('--train-layer', default=3, type=int,
+                    help='layers to train in a pretrained model. '
+                         '1 for last layer. 2 for last two layers, '
+                         '3 for last three layers, 4 for the whole layers')
+
 best_acc1 = 0
 
 
@@ -107,19 +112,27 @@ def main_worker(args):
         print("=> using pre-trained model '{}'".format(args.arch))
         model = models.__dict__[args.arch](num_classes=10)
         model_dict = model.state_dict()
+
         pretrained_dict = {k: v
                            for k, v in models.__dict__[args.arch](pretrained=True).state_dict().items()
-                           if k.find('classifier') == -1}
+                           if k.find('classifier.6') == -1}
         model_dict.update(pretrained_dict)
         model.load_state_dict(model_dict)
+
         ct = 0
         for child in model.children():
             ct += 1
-            if ct <= 2:
-                for param in child.parameters():
+            if ct <= 2 and args.train_layer != 4:  # fraze all the feature layers
+                for i, param in enumerate(child.parameters()):
                     param.requires_grad = False
+                    print('froze', i, 'th feature layers.')
+            else:  # fraze some classifier layers
+                for i, param in enumerate(child.parameters()):
+                    if i // 2 + args.train_layer <= 2 and args.train_layer != 4:
+                        print('froze', i, 'th classifier layer')
+                        param.requires_grad = False
         print('=| Finish loading pre-trained model "{}"'.format(args.arch))
-        print(model)
+
     else:
         print("=> creating model '{}'".format(args.arch))
         model = models.__dict__[args.arch](num_classes=10)

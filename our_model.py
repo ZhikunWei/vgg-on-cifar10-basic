@@ -24,4 +24,19 @@ class OurVGG(nn.Module):
 if __name__ == '__main__':
     vgg = models.vgg19(num_classes=10)
     # model = torch.nn.parallel.DistributedDataParallel(vgg)
-    print(vgg)
+    print(vgg.state_dict().keys())
+    ct = 0
+    for child in vgg.children():
+        ct += 1
+        if ct <= 2:
+            for param in child.parameters():
+                param.requires_grad = False
+        else:
+            for i, param in enumerate(child.parameters()):
+                print(i, param)
+                param.requires_grad = False
+                print(i, param)
+    # print(vgg.children())
+
+    # for child in vgg.children():
+    #     print(list(child.parameters()))

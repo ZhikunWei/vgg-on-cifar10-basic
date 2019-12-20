@@ -37,6 +37,18 @@ Acc@1  85.060 Acc@5 99.550
     server1 11.5    21.5    42
     server2 45    
     server3 6-7.3   12      60-90
+    
+fraze 3 layers  
+batch0  RX bytes:3643928721143  TX bytes:3665941853884  
+batch5  RX bytes:3647953571364  TX bytes:3669990808732  62.5,57,67
+batch20 RX bytes:3658015499936 (3.6 TB)  TX bytes:3680114323840 (3.6 TB)
+batch35 RX bytes:3668349515616 (3.6 TB)  TX bytes:3690503657237 (3.6 TB)
+
+
+no fraze layers
+batch0  RX bytes:3671436998297 (3.6 TB)  TX bytes:3694775601177 (3.6 TB)
+batch5  RX bytes:3676135574915 (3.6 TB)  TX bytes:3699502061397 (3.6 TB)
+
 
   
 
