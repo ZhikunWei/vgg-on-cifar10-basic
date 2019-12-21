@@ -1,5 +1,32 @@
 # vgg-on-cifar10-basic
 
+###TODO on 12.21 formal test
+1. download the files into server or your computer.<br>
+    >git  clone https://github.com/ZhikunWei/vgg-on-cifar10-basic.git
+2. update files into the server.<br>
+    > cd vgg-on-cifar10-basic <br>
+    chmod 777 updatefiles.sh <br>
+    ./updatefiles.sh <br>
+    <input passwords "2019211150" three times(for three servers)>
+
+3. test different batch sizes(the 3rd points in my proposal).<br>
+modify the "--batch-size n" in "startVGG1.sh" "startVGG2.sh" "startVGG3.sh" on three servers:<br>
+according to the speed on different servers. Make the three server finish each batch in similar time.
+
+4. When you find the suitable batch sizes, you can start testing by run:
+    >(on server1):./startVGG1.sh
+    (on server2):./startVGG2.sh
+    (on server3):./startVGG3.sh
+5. About collecting data. You only need to collect the traffic data. 
+For the accuracy etc. I write them into files every batch so don't worry about it
+<br>For collecting data, before the test, open another terminal to run
+    >vnstat -l
+        
+This is used to monitor the traffic. "Ctrl+C" will make it stop and show the total traffic during the period. 
+Don't forget to take notes of the traffic.<br>
+#####Do finish the training and collect the traffic data before our server time ends!
+
+
 ## before
 Find torch.distributed module and learn about it
 
@@ -53,6 +80,7 @@ batch123 RX bytes:4065306719780 (4.0 TB)  TX bytes:4092062381075 (4.0 TB)
 froze 1 layer  
 0  RX bytes:4065972342337 (4.0 TB)  TX bytes:4093897886483 (4.0 TB)
 10 RX bytes:4065974735095 (4.0 TB)  TX bytes:4093900231441 (4.0 TB)
+131*10 RX bytes:4066297062980 (4.0 TB)  TX bytes:4094203980751 (4.0 TB)
 
 no fraze layers
 batch0  RX bytes:3671436998297 (3.6 TB)  TX bytes:3694775601177 (3.6 TB)

@@ -267,7 +267,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         top1.update(acc1[0], images.size(0))
         top5.update(acc5[0], images.size(0))
 
-        # print('Node[' + str(args.rank)+'] finish batch[' + str(i) + '] forwarding and is waiting')
+        print('Node[' + str(args.rank)+'] finish batch[' + str(i) + '] forwarding and is waiting')
         idle_start = time.time()
 
         # compute gradient and do SGD step
@@ -279,7 +279,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         elasped_time = time.time() - end
         batch_time.update(elasped_time)
         end = time.time()
-        print('batch time', elasped_time)
+        #print('batch time', elasped_time)
         write_log('log/train_log_' + args.log_number,
                   epoch * len(train_loader) + i, loss.item(), acc1[0].item(), elasped_time)
 
