@@ -14,9 +14,18 @@ modify the "--batch-size n" in "startVGG1.sh" "startVGG2.sh" "startVGG3.sh" on t
 according to the speed on different servers. Make the three server finish each batch in similar time.
 
 4. When you find the suitable batch sizes, you can start testing by run:
-    >(on server1):./startVGG1.sh
-    (on server2):./startVGG2.sh
-    (on server3):./startVGG3.sh
+(on server1):
+>cd vgg1/ <br>
+>./startVGG1.sh
+    
+(on server2):
+>cd vgg2/ <br>
+>./startVGG2.sh
+
+(on server3):
+>cd vgg3/ <br>
+>./startVGG3.sh
+
 5. About collecting data. You only need to collect the traffic data. 
 For the accuracy etc. I write them into files every batch so don't worry about it
 <br>For collecting data, before the test, open another terminal to run
