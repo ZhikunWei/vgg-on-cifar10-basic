@@ -1,2 +1,2 @@
 #!/bin/bash
-/home/wzk/anaconda3/bin/python main_v4.py --log-number full_train --train-layer 4 --batch-size 23 --dist-url 'tcp://cluster1:40452' --multiprocessing-distributed --world-size 3 --rank 1 dataset/cifar10
+/home/wzk/anaconda3/bin/python main_v4.py --log-number full_train_two_layer --train-layer 2 --batch-size 23 --dist-url 'tcp://cluster1:30452' --multiprocessing-distributed --world-size 3 --rank 1 dataset/cifar10

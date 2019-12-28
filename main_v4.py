@@ -21,7 +21,6 @@ import torchvision.models as models
 
 from data_sampler import MyDistributedSampler
 
-
 model_names = sorted(name for name in models.__dict__
                      if name.islower() and not name.startswith("__")
                      and callable(models.__dict__[name]))
@@ -36,7 +35,7 @@ parser.add_argument('-a', '--arch', metavar='ARCH', default='vgg19',
                          ' (default: vgg19)')
 parser.add_argument('-j', '--workers', default=1, type=int, metavar='N',
                     help='number of data loading workers (default: 1)')
-parser.add_argument('--epochs', default=10, type=int, metavar='N',
+parser.add_argument('--epochs', default=50, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restarts)')
@@ -52,7 +51,7 @@ parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
 parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
                     metavar='W', help='weight decay (default: 1e-4)',
                     dest='weight_decay')
-parser.add_argument('-p', '--print-freq', default=5, type=int,
+parser.add_argument('-p', '--print-freq', default=10, type=int,
                     metavar='N', help='print frequency (default: 10)')
 parser.add_argument('--resume', default='', type=str, metavar='PATH',
                     help='path to latest checkpoint (default: none)')
@@ -83,6 +82,7 @@ parser.add_argument('--train-layer', default=3, type=int,
                          '3 for last three layers, 4 for the whole layers')
 
 best_acc1 = 0
+batch_sizes = [87, 23, 96]
 
 
 def main():
@@ -181,7 +181,7 @@ def main_worker(args):
 
     # cudnn.benchmark = True
 
-    # Data loading code
+    # Data loading
     print("=> creating data loader ...")
     traindir = os.path.join(args.data, 'train')
     valdir = os.path.join(args.data, 'val')
@@ -197,32 +197,49 @@ def main_worker(args):
             normalize,
         ]))
     val_dataset = datasets.ImageFolder(valdir, transforms.Compose([
-            # transforms.Resize(224),
-            transforms.ToTensor(),
-            normalize,
-        ]))
+        # transforms.Resize(224),
+        transforms.ToTensor(),
+        normalize,
+    ]))
 
     if args.distributed:
-        train_sampler = MyDistributedSampler(train_dataset)
-        val_sampler = MyDistributedSampler(val_dataset)
+        train_sampler = MyDistributedSampler(train_dataset, partition=batch_sizes)
+        val_sampler = MyDistributedSampler(val_dataset, partition=batch_sizes)
     else:
         train_sampler = None
         val_sampler = None
 
     train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=args.batch_size, shuffle=(train_sampler is None),
+        train_dataset, batch_size=batch_sizes[args.rank], shuffle=(train_sampler is None),
         num_workers=args.workers, pin_memory=True, sampler=train_sampler)
 
     val_loader = torch.utils.data.DataLoader(
-        val_dataset, batch_size=args.batch_size, shuffle=(val_sampler is None),
+        val_dataset, batch_size=batch_sizes[args.rank], shuffle=(val_sampler is None),
         num_workers=args.workers, pin_memory=True, sampler=val_sampler)
     print("=| data loader created")
 
     if args.evaluate:
         validate(val_loader, model, criterion, args)
         return
-
+    print('=> start training')
     for epoch in range(args.start_epoch, args.epochs):
+        if epoch >= 2:
+            ct = 0
+            for child in model.children():
+                ct += 1
+                if ct <= 2 and args.train_layer != 4:  # fraze all the feature layers
+                    for i, param in enumerate(child.parameters()):
+                        param.requires_grad = False
+                        print('froze', i, 'th feature layers.')
+                else:  # fraze some classifier layers
+                    for i, param in enumerate(child.parameters()):
+                        if i // 2 + args.train_layer <= 2 and args.train_layer != 4:
+                            print('froze', i, 'th classifier layer')
+                            param.requires_grad = False
+            optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()),
+                                         lr=args.lr,
+                                         weight_decay=args.weight_decay)
+
         if args.distributed:
             train_sampler.set_epoch(epoch)
         adjust_learning_rate(optimizer, epoch, args)
@@ -232,7 +249,7 @@ def main_worker(args):
 
         # evaluate on validation set
         acc1, val_batch_time, val_losses = validate(val_loader, model, criterion, args)
-        write_log('log/test_log_'+args.log_number, epoch, val_losses, acc1, val_batch_time)
+        write_log('log/test_log_' + args.log_number, epoch, val_losses, acc1, val_batch_time)
 
         # remember best acc@1 and save checkpoint
         is_best = acc1 > best_acc1
@@ -257,7 +274,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
     top5 = AverageMeter('Acc@5', ':6.2f')
     progress = ProgressMeter(
         len(train_loader),
-        [batch_time, idle_time, losses, top1],
+        [batch_time, losses, top1],
         prefix="Epoch: [{}]".format(epoch))
 
     # switch to train mode
@@ -265,7 +282,6 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
 
     end = time.time()
     for i, (images, target) in enumerate(train_loader):
-
         idle_time.update(time.time() - end)
 
         # compute output
@@ -278,11 +294,12 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         top1.update(acc1[0], images.size(0))
         top5.update(acc5[0], images.size(0))
 
-        print('Node[' + str(args.rank)+'] finish batch[' + str(i) + '] forwarding and is waiting')
+        print('Node[' + str(args.rank) + '] finish batch[' + str(i) + '] forwarding and is waiting')
         idle_start = time.time()
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
+        transport_start = time.time()
         loss.backward()
         optimizer.step()
 
@@ -290,7 +307,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         elasped_time = time.time() - end
         batch_time.update(elasped_time)
         end = time.time()
-        #print('batch time', elasped_time)
+        # print('batch time', elasped_time)
         write_log('log/train_log_' + args.log_number,
                   epoch * len(train_loader) + i, loss.item(), acc1[0].item(), elasped_time)
 

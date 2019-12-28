@@ -7,11 +7,6 @@ import torch
 class MyDistributedSampler(DistributedSampler):
     """Sampler that restricts data loading to a subset of the dataset.
 
-    It is especially useful in conjunction with
-    :class:`torch.nn.parallel.DistributedDataParallel`. In such case, each
-    process can pass a DistributedSampler instance as a DataLoader sampler,
-    and load a subset of the original dataset that is exclusive to it.
-
     .. note::
         The sampler is adjusted to sample different partition to different
         node according to their batch size
