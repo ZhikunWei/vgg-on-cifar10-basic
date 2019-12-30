@@ -48,6 +48,31 @@ def plot_exp_train_layers():
     plt.show()
 
 
+def plot_acc():
+    epoches = []
+    train_acc = []
+    test_acc = []
+    with open('../log/n0/train_epoch_log_formal_1229_1_n0') as f:
+        for line in f:
+            line = line.split()
+            epoches.append(int(line[0]))
+            acc = line[2].split('(')[1].split(')')[0]
+            train_acc.append(float(acc))
+    with open('../log/n0/test_log_formal_1229_1_n0') as f:
+        for line in f:
+            line = line.split()
+            acc = line[2].split('(')[1].split(')')[0]
+            test_acc.append(float(acc))
+    plt.plot(epoches[:30], train_acc[:30], label='train')
+    plt.plot(epoches[:30], test_acc[:30], label='test')
+    plt.legend()
+    plt.xlabel('epoch')
+    plt.ylabel('accuracy')
+    plt.savefig('figures/acc_train_test.png')
+    plt.show()
+
+
 if __name__ == '__main__':
     # plot('../log/lab/n0/train_log_0', 'figures/test.png')
-    plot_exp_train_layers()
+    # plot_exp_train_layers()
+    plot_acc()
