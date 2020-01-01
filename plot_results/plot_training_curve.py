@@ -66,13 +66,36 @@ def plot_acc():
     plt.plot(epoches[:30], train_acc[:30], label='train')
     plt.plot(epoches[:30], test_acc[:30], label='test')
     plt.legend()
+    plt.title('Training/Testing Accuracy w.r.t Epoch')
     plt.xlabel('epoch')
     plt.ylabel('accuracy')
     plt.savefig('figures/acc_train_test.png')
     plt.show()
 
 
+def plot_time():
+    epoches = []
+    times = []
+    with open('../log/n0/epoch_time_formal_1229_1_n0') as f:
+        for line in f:
+            line = line.split()
+            epoches.append(int(line[0]))
+            times.append(float(line[1])/60)
+    average = sum(times[:30])/30
+    plt.plot(epoches[:30], times[:30], label='Actual Time')
+    plt.plot(epoches[:30], [average]*30, label='average={:.2f}'.format(average))
+    plt.legend()
+    plt.title('Actual Time per Epoch')
+    plt.xlabel('epoches')
+    plt.ylabel('Time(mintues)')
+    plt.savefig('figures/training_time.png')
+    plt.show()
+
+
+
+
 if __name__ == '__main__':
     # plot('../log/lab/n0/train_log_0', 'figures/test.png')
     # plot_exp_train_layers()
     plot_acc()
+    plot_time()

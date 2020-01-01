@@ -1,9 +1,37 @@
-# vgg-on-cifar10-basic
+# Distributed vgg on cifar10
 
-###TODO on 12.21 formal test
+#final result
+1.Number of Epochs: 30
+
+2.Training/Testing Accuracy achieved: 87.3% / 71.7%
+
+3.Training/Testing accuracy w.r.t epochs: (figure) 'plot_results/figures/acc_train_test.png'
+
+4.Total training time: 451.8 minutes
+
+5.Average time per epoch: 14.9 minutes
+
+6.Actual time per epoch(including training and testing): (figure) 'plot_results/figures/training_time.png'
+
+7.Communication cost per epoch, failed to take note of every epoch, so on average, one epoch cost: (unit:GiB)
+
+                rx      tx
+    server1     54.8   54.8
+    server2     54.8    54.6
+    server3     54.4    54.8
+
+8.Total communication cost duraing entire training process(30 epochs):(unit: GiB)
+
+                rx      tx
+    server1     1664    1664
+    server2     1664    1638
+    server3     1632    1664
+
+
+###To run the codes
 1. download the files into server or your computer.<br>
     >git  clone https://github.com/ZhikunWei/vgg-on-cifar10-basic.git
-2. update files into the server.<br>
+2. update files into the servers.<br>
     > cd vgg-on-cifar10-basic <br>
     chmod 777 updatefiles.sh <br>
     ./updatefiles.sh <br>
