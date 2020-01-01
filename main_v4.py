@@ -82,6 +82,8 @@ parser.add_argument('--train-layer', default=3, type=int,
                          '3 for last three layers, 4 for the whole layers')
 
 best_acc1 = 0
+
+# important parameters, to spilt dataset unevenly to three nodes
 batch_sizes = [312, 80, 300]
 
 
