@@ -23,9 +23,9 @@
 8.Total communication cost duraing entire training process(30 epochs):(unit: GiB)
 
                 rx      tx
-    server1     1664    1664
-    server2     1664    1638
-    server3     1632    1664
+    server1     1664.2    1664.1
+    server2     1664.3    1638.6
+    server3     1632.4    1664.7
 
 
 ###To run the codes
