@@ -28,7 +28,7 @@ Contact me if there is a problem running the codes.
     server3     1632.4    1664.7
 
 
-###To run the codes
+## To run the codes
 1. download the files into server or your computer.<br>
     >git  clone https://github.com/ZhikunWei/vgg-on-cifar10-basic.git
 2. update files into the servers.<br>
