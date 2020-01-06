@@ -1,6 +1,6 @@
 # Distributed vgg on cifar10 (Future Internet Project)
 Contact me if there is a problem running the codes.
-#final result
+## final result
 1.Number of Epochs: 30
 
 2.Training/Testing Accuracy achieved: 87.3% / 71.7%
